@@ -1,0 +1,18 @@
+numpy
+pandas
+datasets
+astropy
+dl
+h5py
+aiohttp
+kcorrect
+matplotlib
+tqdm
+jupyter
+kaggle
+seaborn
+scikit-learn
+astro-datalab
+dinov2 @ git+https://github.com/facebookresearch/dinov2.git@2302b6bf46953431b969155307b9bed152754069
+lightning[extra]
+torchvision
