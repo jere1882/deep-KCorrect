@@ -9,6 +9,7 @@ Create a conda environment and install requirements.txt
 ```bash
 conda create --name deep-k-correct python=3.9
 conda activate deep-k-correct
+pip install torch==2.0.0+cu117 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 pip install -r requirements.txt
 pip install -e .
 ```

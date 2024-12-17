@@ -13,6 +13,8 @@ kaggle
 seaborn
 scikit-learn
 astro-datalab
-dinov2 @ git+https://github.com/facebookresearch/dinov2.git@2302b6bf46953431b969155307b9bed152754069
 lightning[extra]
-torchvision
+torch==2.0.0+cu117
+dinov2 @ git+https://github.com/facebookresearch/dinov2.git
+torchmetrics==0.10.3
+torchvision==0.15.0
