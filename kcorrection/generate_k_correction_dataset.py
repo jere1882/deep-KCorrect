@@ -51,7 +51,7 @@ def main(train_path, test_path, fits_path, save_path):
     # Define selected columns
     selected_col_names = [
         "TARGETID", "Z", "KCORR01_SDSS_R", "KCORR01_SDSS_G", "KCORR01_SDSS_Z",
-        "KCORR10_DECAM_G", "KCORR10_DECAM_R", "KCORR10_DECAM_Z"
+        "ABSMAG01_SDSS_R", "ABSMAG01_SDSS_G", "ABSMAG01_SDSS_Z"
     ]
     
     # Load FITS data
@@ -62,10 +62,9 @@ def main(train_path, test_path, fits_path, save_path):
     print("Processing train data...")
     process_data_in_chunks(fits_table, train_path, save_path, "kcorrs_train.hdf5")
 
-    
     # Process and save test data
-    #print("Processing test data...")
-    #process_data_in_chunks(fits_table, test_path, save_path, "kcorrs_test.hdf5")
+    print("Processing test data...")
+    process_data_in_chunks(fits_table, test_path, save_path, "kcorrs_test.hdf5")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

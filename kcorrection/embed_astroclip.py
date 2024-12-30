@@ -5,7 +5,6 @@ import torch
 from tqdm import tqdm
 
 from astroclip.data.datamodule import AstroClipCollator, AstroClipDataloader
-from astroclip.env import format_with_env
 from astroclip.models.astroclip import AstroClipModel
 
 
@@ -17,6 +16,8 @@ def embed_astroclip(
     batch_size: int = 256,
     loader_type: str = "val",
 ):
+
+    print("Loading the models")
     """Extract embeddings from the AstroClip model and save them incrementally to an HDF5 file"""
     # Load the model
     astroclip = AstroClipModel.load_from_checkpoint(model_path)
@@ -39,6 +40,8 @@ def embed_astroclip(
     else:
         raise ValueError("loader must be either 'train' or 'val'")
 
+    print("Loading the data")
+    
     # Prepare HDF5 file with extendable datasets
     with h5py.File(save_path, "w") as f:
         total_samples = 0
@@ -135,6 +138,8 @@ if __name__ == "__main__":
         help="Which loader to use (train or val)",
         default="val",
     )
+
+    print("Embedding ascroclip")
     args = parser.parse_args()
     embed_astroclip(
         args.model_path,

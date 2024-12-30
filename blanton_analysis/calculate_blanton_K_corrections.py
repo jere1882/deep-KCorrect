@@ -4,11 +4,16 @@ import pandas as pd
 from datasets import load_dataset
 from tqdm import tqdm
 import kcorrect.kcorrect
+import random
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from datasets import load_dataset
 
-def load_astroclip_dataset(dataset_path, split):
-    """Load the specified split of the AstroCLIP dataset."""
-    print(f"Loading AstroCLIP dataset from: {dataset_path} (split: {split})")
-    return load_dataset(dataset_path, split=split)
+def load_astroclip_dataset(dataset_path, split, columns):
+    """Load only specific columns of the AstroCLIP dataset."""
+    print(f"Streaming AstroCLIP dataset from: {dataset_path} (split: {split})")
+    dataset = load_dataset(dataset_path, split=split, streaming=True)
+    filtered_data = (({col: sample[col] for col in columns}) for sample in dataset)
+    return filtered_data
 
 def load_photometry_data(file_path, key='df'):
     """Load photometry data from an HDF5 file."""
@@ -44,16 +49,31 @@ def calculate_k_corrections_for_target(targetid, redshift, photometry, kc):
 
     return results
 
-def process_galaxies(df, photometry, kc):
-    """Process galaxies and compute K-corrections."""
-    blanton_kcorrs = {}
-    for galaxy in tqdm(df, desc="Processing galaxies"):
-        try:
-            blanton_kcorrs[galaxy["targetid"]] = calculate_k_corrections_for_target(
-                galaxy["targetid"], galaxy["redshift"], photometry, kc
+
+def process_galaxy(galaxy, photometry, kc, noise_range):
+    """Process a single galaxy and compute K-corrections."""
+    try:
+        noise = random.uniform(-noise_range, noise_range)  # Noise between -noise_range and +noise_range
+        noisy_redshift = max(0, galaxy["redshift"] + noise)  # Ensure redshift remains non-negative
+        result = {
+            galaxy["targetid"]: calculate_k_corrections_for_target(
+                galaxy["targetid"], noisy_redshift, photometry, kc
             )
-        except Exception as e:
-            print(f"Error processing galaxy {galaxy['targetid']} with redshift {galaxy['redshift']}: {e}")
+        }
+        return result
+    except Exception as e:
+        print(f"Error processing galaxy {galaxy['targetid']} with redshift {galaxy['redshift']}: {e}")
+        return {}
+
+def process_galaxies(df, photometry, kc, noise_range):
+    """Process galaxies and compute K-corrections in parallel."""
+    blanton_kcorrs = {}
+    with ProcessPoolExecutor(max_workers=6) as executor:
+        # Submit tasks to the executor
+        futures = {executor.submit(process_galaxy, galaxy, photometry, kc, noise_range): galaxy for galaxy in df}
+        for future in tqdm(as_completed(futures), total=len(df), desc="Processing galaxies"):
+            result = future.result()
+            blanton_kcorrs.update(result)  # Merge results from each process
     return blanton_kcorrs
 
 def save_k_corrections(blanton_kcorrs, save_path):
@@ -75,11 +95,12 @@ if __name__ == "__main__":
     parser.add_argument("--astroclip_path", type=str, required=True, help="Path to the AstroCLIP dataset.")
     parser.add_argument("--desi_path", type=str, required=True, help="Path to the DESI photometry data (HDF5).")
     parser.add_argument("--save_path", type=str, default="../data/blanton_kcorrs.pickle", help="Path to save the K-corrections (pickle).")
+    parser.add_argument("--noise_range", type=float, default=0.0, help="Range of noise to apply to redshift (default: 0.0).")
     args = parser.parse_args()
 
     # Load datasets
-    astroclip_train = load_astroclip_dataset(args.astroclip_path, split="train")
-    astroclip_test = load_astroclip_dataset(args.astroclip_path, split="test")
+    astroclip_train = load_astroclip_dataset(args.astroclip_path, split="train", columns=["targetid", "redshift"])
+    astroclip_test = load_astroclip_dataset(args.astroclip_path, split="test", columns=["targetid", "redshift"])
     photometry = load_photometry_data(args.desi_path)
 
     # Initialize kcorrect
@@ -89,10 +110,10 @@ if __name__ == "__main__":
 
     # Process galaxies
     print("Processing train dataset...")
-    blanton_kcorrs_train = process_galaxies(astroclip_train, photometry, kc)
+    blanton_kcorrs_train = process_galaxies(list(astroclip_train), photometry, kc, args.noise_range)
 
     print("Processing test dataset...")
-    blanton_kcorrs_test = process_galaxies(astroclip_test, photometry, kc)
+    blanton_kcorrs_test = process_galaxies(list(astroclip_test), photometry, kc, args.noise_range)
 
     # Combine results and save
     blanton_kcorrs_train.update(blanton_kcorrs_test)

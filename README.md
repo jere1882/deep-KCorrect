@@ -55,7 +55,7 @@ If you wish to recalculate Blanton K corrections from the datasets downloaded in
 
 
 ```python
-python blanton_analysis/calculate_blanton_K_corrections.py data/raw/AstroCLIP data/raw/fastspec-fuji.fits
+python blanton_analysis/calculate_blanton_K_corrections.py --astroclip_path data/raw/AstroCLIP --desi_path  data/desi_edr_fluxes.h5 
 ```
 
 Alternatively, you can download the pre-calculated K corrections:
