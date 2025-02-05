@@ -4,16 +4,12 @@ import pandas as pd
 from datasets import load_dataset
 from tqdm import tqdm
 import kcorrect.kcorrect
-import random
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from datasets import load_dataset
+import pickle
 
-def load_astroclip_dataset(dataset_path, split, columns):
-    """Load only specific columns of the AstroCLIP dataset."""
-    print(f"Streaming AstroCLIP dataset from: {dataset_path} (split: {split})")
-    dataset = load_dataset(dataset_path, split=split, streaming=True)
-    filtered_data = (({col: sample[col] for col in columns}) for sample in dataset)
-    return filtered_data
+def load_astroclip_dataset(dataset_path, split):
+    """Load the specified split of the AstroCLIP dataset."""
+    print(f"Loading AstroCLIP dataset from: {dataset_path} (split: {split})")
+    return load_dataset(dataset_path, split=split)
 
 def load_photometry_data(file_path, key='df'):
     """Load photometry data from an HDF5 file."""
@@ -37,52 +33,70 @@ def calculate_k_corrections_for_target(targetid, redshift, photometry, kc):
     coeffs = kc.fit_coeffs(redshift=redshift, maggies=dered_maggies, ivar=ivar)
     k_dered = kc.kcorrect(redshift=redshift, coeffs=coeffs, band_shift=0.1)
     
-    results["kcorrs_sdss_01_g"] = k_dered[0]
-    results["kcorrs_sdss_01_r"] = k_dered[1]
-    results["kcorrs_sdss_01_z"] = k_dered[2]
+    results["K_G_G"] = k_dered[0]
+    results["K_R_G"] = k_dered[1]
+    results["K_Z_G"] = k_dered[2]
+    results["K_R_R"] = k_dered[3]
+    results["K_Z_R"] = k_dered[4]
+    results["K_Z_Z"] = k_dered[5]
 
     absmag = kc.absmag(redshift=redshift, maggies=dered_maggies, ivar=ivar, coeffs=coeffs)
-    results["absmag_g"] = absmag[0]
-    results["absmag_r"] = absmag[1]
-    results["absmag_z"] = absmag[2]
+    results["absmag_g_g"] = absmag[0]
+    results["absmag_g_r"] = absmag[1]
+    results["absmag_g_z"] = absmag[2]
+    results["absmag_r_r"] = absmag[3]
+    results["absmag_z_r"] = absmag[4]
+    results["absmag_z_z"] = absmag[5]
     results["z"] = redshift
 
     return results
 
-
-def process_galaxy(galaxy, photometry, kc, noise_range):
-    """Process a single galaxy and compute K-corrections."""
-    try:
-        noise = random.uniform(-noise_range, noise_range)  # Noise between -noise_range and +noise_range
-        noisy_redshift = max(0, galaxy["redshift"] + noise)  # Ensure redshift remains non-negative
-        result = {
-            galaxy["targetid"]: calculate_k_corrections_for_target(
-                galaxy["targetid"], noisy_redshift, photometry, kc
-            )
-        }
-        return result
-    except Exception as e:
-        print(f"Error processing galaxy {galaxy['targetid']} with redshift {galaxy['redshift']}: {e}")
-        return {}
-
-def process_galaxies(df, photometry, kc, noise_range):
-    """Process galaxies and compute K-corrections in parallel."""
+def process_galaxies(df, photometry, kc, save_path):
+    """Process galaxies and compute K-corrections."""
     blanton_kcorrs = {}
-    with ProcessPoolExecutor(max_workers=6) as executor:
-        # Submit tasks to the executor
-        futures = {executor.submit(process_galaxy, galaxy, photometry, kc, noise_range): galaxy for galaxy in df}
-        for future in tqdm(as_completed(futures), total=len(df), desc="Processing galaxies"):
-            result = future.result()
-            blanton_kcorrs.update(result)  # Merge results from each process
+    error_log = {
+        "Maximum number of iterations reached.": [],
+        "Matrix is singular.": [],
+        "Redshift out of range for interpolating A matrix!": []
+    }
+
+    for galaxy in tqdm(df, desc="Processing galaxies"):
+        try:
+            truncated_redshift = round(galaxy["redshift"], 3)
+            blanton_kcorrs[galaxy["targetid"]] = calculate_k_corrections_for_target(
+                galaxy["targetid"], truncated_redshift, photometry, kc
+            )
+        except Exception as e:
+            error_message = str(e)
+            if error_message in error_log:
+                error_log[error_message].append(galaxy["targetid"])
+            else:
+                print(f"Unexpected error for galaxy {galaxy['targetid']} with redshift {galaxy['redshift']}: {e}")
+
+    # Save the error log
+    error_log_path = save_path.replace('.pickle', '_error_log.pickle')
+    with open(error_log_path, 'wb') as f:
+        pickle.dump(error_log, f)
+    print(f"Error log saved to: {error_log_path}")
+
     return blanton_kcorrs
 
 def save_k_corrections(blanton_kcorrs, save_path):
     """Save K-corrections to a pickle file."""
     kcorr_df = pd.DataFrame({
         'targetid': blanton_kcorrs.keys(),
-        'kcorr_sdss_01_g': [blanton_kcorrs[k]['kcorrs_sdss_01_g'] for k in blanton_kcorrs],
-        'kcorr_sdss_01_r': [blanton_kcorrs[k]['kcorrs_sdss_01_r'] for k in blanton_kcorrs],
-        'kcorr_sdss_01_z': [blanton_kcorrs[k]['kcorrs_sdss_01_z'] for k in blanton_kcorrs],
+        'K_G_G': [blanton_kcorrs[k]['K_G_G'] for k in blanton_kcorrs],
+        'K_R_G': [blanton_kcorrs[k]['K_R_G'] for k in blanton_kcorrs],
+        'K_Z_G': [blanton_kcorrs[k]['K_Z_G'] for k in blanton_kcorrs],
+        'K_R_R': [blanton_kcorrs[k]['K_R_R'] for k in blanton_kcorrs],
+        'K_Z_R': [blanton_kcorrs[k]['K_Z_R'] for k in blanton_kcorrs],
+        'K_Z_Z': [blanton_kcorrs[k]['K_Z_Z'] for k in blanton_kcorrs],
+        'absmag_g_g': [blanton_kcorrs[k]['absmag_g_g'] for k in blanton_kcorrs],
+        'absmag_g_r': [blanton_kcorrs[k]['absmag_g_r'] for k in blanton_kcorrs],
+        'absmag_g_z': [blanton_kcorrs[k]['absmag_g_z'] for k in blanton_kcorrs],
+        'absmag_r_r': [blanton_kcorrs[k]['absmag_r_r'] for k in blanton_kcorrs],
+        'absmag_z_r': [blanton_kcorrs[k]['absmag_z_r'] for k in blanton_kcorrs],
+        'absmag_z_z': [blanton_kcorrs[k]['absmag_z_z'] for k in blanton_kcorrs],
         'z': [blanton_kcorrs[k]['z'] for k in blanton_kcorrs]
     })
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -95,25 +109,25 @@ if __name__ == "__main__":
     parser.add_argument("--astroclip_path", type=str, required=True, help="Path to the AstroCLIP dataset.")
     parser.add_argument("--desi_path", type=str, required=True, help="Path to the DESI photometry data (HDF5).")
     parser.add_argument("--save_path", type=str, default="../data/blanton_kcorrs.pickle", help="Path to save the K-corrections (pickle).")
-    parser.add_argument("--noise_range", type=float, default=0.0, help="Range of noise to apply to redshift (default: 0.0).")
     args = parser.parse_args()
 
     # Load datasets
-    astroclip_train = load_astroclip_dataset(args.astroclip_path, split="train", columns=["targetid", "redshift"])
-    astroclip_test = load_astroclip_dataset(args.astroclip_path, split="test", columns=["targetid", "redshift"])
+    astroclip_train = load_astroclip_dataset(args.astroclip_path, split="train")
+    astroclip_test = load_astroclip_dataset(args.astroclip_path, split="test")
     photometry = load_photometry_data(args.desi_path)
 
     # Initialize kcorrect
     responses_in = ['bass_g', 'bass_r', 'mzls_z']
-    responses_out = ['sdss_g0', 'sdss_r0', 'sdss_z0']
-    kc = kcorrect.kcorrect.Kcorrect(responses=responses_in, responses_out=responses_out, abcorrect=False)
-
+    responses_out = ['sdss_g0'] #['sdss_g0', 'sdss_g0', 'sdss_g0', 'sdss_r0', 'sdss_r0', 'sdss_z0']
+    responses_map = ['bass_g'] #, 'bass_r', 'mzls_z', 'bass_r', 'mzls_z', 'mzls_z']
+    kc = kcorrect.kcorrect.Kcorrect(responses=responses_in, responses_out=responses_out, responses_map=responses_map, abcorrect=False)
+    
     # Process galaxies
     print("Processing train dataset...")
-    blanton_kcorrs_train = process_galaxies(list(astroclip_train), photometry, kc, args.noise_range)
+    blanton_kcorrs_train = process_galaxies(astroclip_train, photometry, kc, args.save_path)
 
     print("Processing test dataset...")
-    blanton_kcorrs_test = process_galaxies(list(astroclip_test), photometry, kc, args.noise_range)
+    blanton_kcorrs_test = process_galaxies(astroclip_test, photometry, kc, args.save_path)
 
     # Combine results and save
     blanton_kcorrs_train.update(blanton_kcorrs_test)
