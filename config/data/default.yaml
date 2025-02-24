@@ -1,0 +1,9 @@
+train_path: "data/train_df_kcorr_panda.h5"
+test_path: "data/test_df_kcorr_panda.h5"
+z_min: 0.0
+z_max: 0.37
+target_variable: "KCORR01_SDSS_R"
+include_redshift: false
+metrics:
+  - mse
+  - mae

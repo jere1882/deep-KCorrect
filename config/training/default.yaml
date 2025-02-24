@@ -1,0 +1,7 @@
+max_epochs: 20
+optimizer:
+  type: Adam
+  learning_rate: 0.001
+batch_size: 64
+num_workers: 9
+devices: -1

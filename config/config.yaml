@@ -1,0 +1,5 @@
+defaults:
+  - data: default
+  - model: mlp
+  - training: default
+  - logging: default

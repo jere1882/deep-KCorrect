@@ -1,0 +1,5 @@
+model_type: "ResidualMLP"
+n_in: 1024
+n_out: 1
+n_hidden: [16, 16, 16]
+dropout: 0.2

@@ -20,4 +20,9 @@ torchmetrics==0.10.3
 torchvision==0.15.0
 scikit-image
 tables
+tensorboard
 pyro-ppl
+omegaconf
+hydra-core
+pyyaml
+xgboost

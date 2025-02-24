@@ -1,0 +1,6 @@
+model_type: "MLP"
+n_in: 1024
+n_out: 1
+n_hidden: [1024, 512, 512, 256]
+act: "ReLU"
+dropout: 0.2

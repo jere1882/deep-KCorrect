@@ -1,0 +1,12 @@
+defaults:
+  - data: default
+  - model: mlp
+  - training: default
+  - logging: default
+
+
+data:
+  include_redshift: true
+
+model:
+  n_in: 1025
