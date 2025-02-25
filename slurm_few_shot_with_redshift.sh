@@ -35,8 +35,8 @@ VALID_PAIRS=(
     "absmag_G_G ABSMAG01_SDSS_G $MIN_REDSHIFT $threshold_g1"
     "absmag_G_R ABSMAG01_SDSS_G $threshold_g1 $threshold_g2"
     "absmag_G_Z ABSMAG01_SDSS_G $threshold_g2 $MAX_REDSHIFT"
-    "absmag_R_G ABSMAG01_SDSS_R $MIN_REDSHIFT $threshold_r"
-    "absmag_R_R ABSMAG01_SDSS_R $threshold_r $MAX_REDSHIFT"
+    "absmag_R_R ABSMAG01_SDSS_R $MIN_REDSHIFT $threshold_r"
+    "absmag_R_G ABSMAG01_SDSS_R $threshold_r $MAX_REDSHIFT"
     "absmag_Z_Z ABSMAG01_SDSS_Z $MIN_REDSHIFT $MAX_REDSHIFT"
 )
 

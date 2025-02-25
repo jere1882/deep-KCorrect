@@ -47,6 +47,8 @@ def process_data_in_chunks(fits_table, hdf5_path, save_path, output_name, chunk_
 
     print(f"Data saved in chunks under {output_file}")
 
+    convert_hdf5_to_pandas(output_file)
+
 def main(train_path, test_path, fits_path, save_path):
     # Define selected columns
     selected_col_names = [

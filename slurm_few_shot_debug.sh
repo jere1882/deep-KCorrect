@@ -17,9 +17,9 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate deep-k-correct
 
 # Debugging specific combination
-TARGET_VARIABLE="KCORR01_SDSS_G"
-Z_MIN=0.3031
-Z_MAX=0.814
+TARGET_VARIABLE="ABSMAG01_SDSS_G"
+Z_MIN=0.814
+Z_MAX=2
 
 echo "Running debug for target variable: $TARGET_VARIABLE, z_min=$Z_MIN, z_max=$Z_MAX"
-python train_few_shot.py model=residual_mlp data.target_variable=$TARGET_VARIABLE data.z_min=$Z_MIN data.z_max=$Z_MAX training.devices=-1
+python train_few_shot.py --config-name mlp_with_redshift.yaml data.target_variable=$TARGET_VARIABLE data.z_min=$Z_MIN data.z_max=$Z_MAX training.devices=-1 logging.experiment_tag=curiosity training.max_epochs=50

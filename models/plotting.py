@@ -4,7 +4,7 @@ import seaborn as sns
 from sklearn.metrics import r2_score
 
 def plot_scatter(
-    preds: dict,
+    preds: np.ndarray,
     ground_truth: np.ndarray,
     data_lower_lim: float = -0.5,
     data_upper_lim: float = 0.5,
@@ -16,13 +16,13 @@ def plot_scatter(
     i=0
     name="AstroCLIP"
 
-    sns.scatterplot(ax=ax, x=ground_truth, y=preds[name], s=5, color=".15")
+    sns.scatterplot(ax=ax, x=ground_truth, y=preds, s=5, color=".15")
 
     sns.histplot(
-        ax=ax, x=ground_truth, y=preds[name], bins=50, pthresh=0.1, cmap="mako"
+        ax=ax, x=ground_truth, y=preds, bins=50, pthresh=0.1, cmap="mako"
     )
     sns.kdeplot(
-        ax=ax, x=ground_truth, y=preds[name], levels=5, color="k", linewidths=1
+        ax=ax, x=ground_truth, y=preds, levels=5, color="k", linewidths=1
     )
 
     ax.plot(
@@ -37,15 +37,7 @@ def plot_scatter(
     ax.plot([data_lower_lim, data_upper_lim], [data_lower_lim, data_upper_lim], '--', color='red', linewidth=1)
     ax.set_xlim(data_lower_lim, data_upper_lim)
     ax.set_ylim(data_lower_lim, data_upper_lim)
-    ax.text(
-        0.9,
-        0.1,
-        "$R^2$ score: %0.2f" % r2_score(ground_truth, preds[name]),
-        horizontalalignment="right",
-        verticalalignment="top",
-        fontsize=22,
-        transform=ax.transAxes,
-    )
+
     ax.set_title(name, fontsize=25)
 
     ax.set_ylabel(varname, fontsize=25)

@@ -129,7 +129,7 @@ def prepare_dataset_for_visualization(train_ds, test_ds, z_min, z_max, target_va
     y_train = train_ds[target_variable][cond_train]
     y_test = test_ds[target_variable][cond_test]
 
-    return X_train, y_train, X_test, y_test, z_train, z_test
+    return X_train, y_train, X_test, y_test, z_train[cond_train], z_test[cond_test]
 
 def load_data(train_path, test_path, z_min, z_max, target_variable, include_redshift=False):
     logging.debug("Loading training data from: %s", train_path)
