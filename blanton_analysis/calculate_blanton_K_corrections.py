@@ -40,7 +40,7 @@ def calculate_k_corrections_for_target(targetid, redshift, photometry, kc):
     results["K_Z_R"] = k_dered[4]
     results["K_Z_Z"] = k_dered[5]
 
-    absmag = kc.absmag(redshift=redshift, maggies=dered_maggies, ivar=ivar, coeffs=coeffs)
+    absmag = kc.absmag(redshift=redshift, maggies=dered_maggies, ivar=ivar, coeffs=coeffs, band_shift=0.1)
     results["absmag_g_g"] = absmag[0]
     results["absmag_g_r"] = absmag[1]
     results["absmag_g_z"] = absmag[2]
@@ -118,8 +118,8 @@ if __name__ == "__main__":
 
     # Initialize kcorrect
     responses_in = ['bass_g', 'bass_r', 'mzls_z']
-    responses_out = ['sdss_g0'] #['sdss_g0', 'sdss_g0', 'sdss_g0', 'sdss_r0', 'sdss_r0', 'sdss_z0']
-    responses_map = ['bass_g'] #, 'bass_r', 'mzls_z', 'bass_r', 'mzls_z', 'mzls_z']
+    responses_out = ['sdss_2010-g', 'sdss_2010-g', 'sdss_2010-g', 'sdss_2010-r', 'sdss_2010-r', 'sdss_2010-z']
+    responses_map = ['bass_g', 'bass_r', 'mzls_z', 'bass_r', 'mzls_z', 'mzls_z']
     kc = kcorrect.kcorrect.Kcorrect(responses=responses_in, responses_out=responses_out, responses_map=responses_map, abcorrect=False)
     
     # Process galaxies
