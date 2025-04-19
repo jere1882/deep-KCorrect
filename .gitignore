@@ -1,0 +1,16 @@
+# Ignore Python bytecode cache
+**/__pycache__/
+**/*.py[cod]
+
+# Ignore Jupyter Notebook checkpoints
+**/.ipynb_checkpoints/
+
+# Ignore setuptools/distutils package metadata
+**/*.egg-info/
+
+# Logs
+checkpoints/
+lightning_logs/
+tensorboard_logs/
+outputs/
+*.out
