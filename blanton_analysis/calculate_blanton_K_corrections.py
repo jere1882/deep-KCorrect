@@ -54,24 +54,38 @@ def calculate_k_corrections_for_target(targetid, redshift, photometry, kc):
 def process_galaxies(df, photometry, kc, save_path):
     """Process galaxies and compute K-corrections."""
     blanton_kcorrs = {}
-    error_log = {
-        "Maximum number of iterations reached.": [],
-        "Matrix is singular.": [],
-        "Redshift out of range for interpolating A matrix!": []
-    }
-
+    error_log = {}  # Changed to empty dict to track all error types
+    
+    # Track all input targetids for accountability
+    all_targetids = set([galaxy["targetid"] for galaxy in df])
+    processed_targetids = set()
+    
     for galaxy in tqdm(df, desc="Processing galaxies"):
         try:
             truncated_redshift = round(galaxy["redshift"], 3)
             blanton_kcorrs[galaxy["targetid"]] = calculate_k_corrections_for_target(
                 galaxy["targetid"], truncated_redshift, photometry, kc
             )
+            processed_targetids.add(galaxy["targetid"])
         except Exception as e:
             error_message = str(e)
-            if error_message in error_log:
-                error_log[error_message].append(galaxy["targetid"])
-            else:
-                print(f"Unexpected error for galaxy {galaxy['targetid']} with redshift {galaxy['redshift']}: {e}")
+            if error_message not in error_log:
+                error_log[error_message] = []
+            error_log[error_message].append(galaxy["targetid"])
+            processed_targetids.add(galaxy["targetid"])
+
+    # Check for missing galaxies
+    missing_targetids = all_targetids - processed_targetids
+    if missing_targetids:
+        print(f"WARNING: {len(missing_targetids)} galaxies were not processed!")
+        error_log["Missing/Not processed"] = list(missing_targetids)
+    
+    # Print error statistics
+    print(f"Total galaxies: {len(all_targetids)}")
+    print(f"Successfully processed: {len(blanton_kcorrs)}")
+    print(f"Failed with errors: {sum(len(ids) for ids in error_log.values())}")
+    for error_type, ids in error_log.items():
+        print(f"  - {error_type}: {len(ids)} galaxies")
 
     # Save the error log
     error_log_path = save_path.replace('.pickle', '_error_log.pickle')
@@ -116,6 +130,10 @@ if __name__ == "__main__":
     astroclip_test = load_astroclip_dataset(args.astroclip_path, split="test")
     photometry = load_photometry_data(args.desi_path)
 
+    # Print dataset sizes for accountability
+    print(f"AstroCLIP train dataset size: {len(astroclip_train)} galaxies")
+    print(f"AstroCLIP test dataset size: {len(astroclip_test)} galaxies")
+
     # Initialize kcorrect
     responses_in = ['bass_g', 'bass_r', 'mzls_z']
 
@@ -126,11 +144,24 @@ if __name__ == "__main__":
     
     # Process galaxies
     print("Processing train dataset...")
-    blanton_kcorrs_train = process_galaxies(astroclip_train, photometry, kc, args.save_path)
+    train_save_path = args.save_path.replace('.pickle', '_train.pickle')
+    blanton_kcorrs_train = process_galaxies(astroclip_train, photometry, kc, train_save_path)
+    save_k_corrections(blanton_kcorrs_train, train_save_path)
 
     print("Processing test dataset...")
-    blanton_kcorrs_test = process_galaxies(astroclip_test, photometry, kc, args.save_path)
+    test_save_path = args.save_path.replace('.pickle', '_test.pickle')
+    blanton_kcorrs_test = process_galaxies(astroclip_test, photometry, kc, test_save_path)
+    save_k_corrections(blanton_kcorrs_test, test_save_path)
 
+    print("Saving combined results...")
     # Combine results and save
-    blanton_kcorrs_train.update(blanton_kcorrs_test)
-    save_k_corrections(blanton_kcorrs_train, args.save_path)
+    blanton_kcorrs_combined = {**blanton_kcorrs_train, **blanton_kcorrs_test}
+    save_k_corrections(blanton_kcorrs_combined, args.save_path)
+    
+    # Final accountability report
+    print("\nFinal accountability report:")
+    print(f"Total train galaxies: {len(astroclip_train)}")
+    print(f"Successfully processed train galaxies: {len(blanton_kcorrs_train)}")
+    print(f"Total test galaxies: {len(astroclip_test)}")
+    print(f"Successfully processed test galaxies: {len(blanton_kcorrs_test)}")
+    print(f"Total combined galaxies: {len(blanton_kcorrs_combined)}")

@@ -41,7 +41,7 @@ I made the relevant deredened fluxes at bands g,r and z avalible in kaggle:
 
 ```bash
 kaggle datasets download -d jeremiasrodriguez/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr -p data/
-unzip data/jeremiasrodriguez/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr.zip -d data/
+unzip data/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr.zip -d data/
 ```
 
 Alternatively, you may recompute this dataset. The following script will query the Astro Data Lab database and retrieve the fluxes for matching target ids. This may take a while to run because it is O(n^2) on the size of the tables.
