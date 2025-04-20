@@ -40,7 +40,7 @@ wget -P data/raw/ https://data.desi.lbl.gov/public/edr/vac/edr/fastspecfit/fuji/
 I made the relevant deredened fluxes at bands g,r and z avalible in kaggle:
 
 ```bash
-kaggle datasets download -d jeremiasrodriguez/jeremiasrodriguez/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr -p data/
+kaggle datasets download -d jeremiasrodriguez/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr -p data/
 unzip data/jeremiasrodriguez/flux-in-bands-g-r-and-z-for-galaxies-in-desi-edr.zip -d data/
 ```
 

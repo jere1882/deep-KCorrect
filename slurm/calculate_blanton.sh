@@ -17,4 +17,4 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate deep-k-correct
 
  # Execute your Python script
-python blanton_analysis/calculate_blanton_K_corrections.py --astroclip_path data/raw/AstroCLIP --desi_path  data/desi_edr_fluxes.h5 --noise_range 0.05 --save_path data/blanton_kcorrs_005.pickle 
+python blanton_analysis/calculate_blanton_K_corrections.py --astroclip_path data/raw/AstroCLIP --desi_path  data/desi_edr_fluxes.h5 --save_path data/blanton_kcorrs_recalculated.pickle 

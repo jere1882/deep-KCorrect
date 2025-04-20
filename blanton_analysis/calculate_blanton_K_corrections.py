@@ -118,7 +118,9 @@ if __name__ == "__main__":
 
     # Initialize kcorrect
     responses_in = ['bass_g', 'bass_r', 'mzls_z']
-    responses_out = ['sdss_2010-g', 'sdss_2010-g', 'sdss_2010-g', 'sdss_2010-r', 'sdss_2010-r', 'sdss_2010-z']
+
+    # TODO: Find a way to use the sdss_2010 responses
+    responses_out = ['sdss_g0', 'sdss_g0', 'sdss_g0', 'sdss_r0', 'sdss_r0', 'sdss_z0']
     responses_map = ['bass_g', 'bass_r', 'mzls_z', 'bass_r', 'mzls_z', 'mzls_z']
     kc = kcorrect.kcorrect.Kcorrect(responses=responses_in, responses_out=responses_out, responses_map=responses_map, abcorrect=False)
     
